@@ -1,0 +1,42 @@
+project:
+  name: "Deep Research Agent"
+  version: "2.0"
+
+hardware:
+  memory_limit_gb: 24
+  device: "mps" # Apple Silicon
+
+ollama:
+  base_url: "http://localhost:11434"  # Local Ollama instance
+  cloud_url: "http://localhost:11434" # Ollama Cloud endpoint (configure as needed)
+
+mcp_server:
+  url: "http://localhost:8000"
+  tools:
+    - "openalex_search"
+    - "vector_store_query"
+
+agent_models:
+  generator:
+    provider: "ollama"
+    model: "gpt-oss:20b"
+    temperature: 0.8
+    system_prompt_path: "./prompts/generator_v2.txt"
+
+  critic:
+    provider: "ollama-cloud"  # Ollama Cloud for better reasoning
+    #model: "gemini-3-pro-preview:latest"
+    model: "deepseek-v3.1:671b-cloud"
+    temperature: 0.1
+    system_prompt_path: "./prompts/critic_v2.txt"
+
+  refiner:
+    provider: "ollama-cloud"
+    model: "gpt-oss:120b-cloud" # Logic heavy
+    temperature: 0.3
+    system_prompt_path: "./prompts/refiner_v2.txt"
+
+loop_settings:
+  max_iterations: 2
+  score_threshold: 3.0
+  drop_threshold: 2.0
