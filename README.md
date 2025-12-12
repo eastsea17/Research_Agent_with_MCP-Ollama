@@ -1,37 +1,38 @@
-# Multi-Agent based Research Topic Ideation System 🔬
+# Multi-agent based Research Topic Ideation System 🔬
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Ollama](https://img.shields.io/badge/Ollama-required-orange.svg)](https://ollama.ai/)
+[![Ollama](https://img.shields.io/badge/Ollama-Cloud%20Supported-orange.svg)](https://ollama.ai/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+> **Version 1.0**
+>
 > **Multi-Agent Research Ideation System: Generator → Critic → Refiner Loop**
 
-An automated system that searches for the latest papers via OpenAlex API and generates **top-tier journal-quality** research proposals through a multi-agent system.
+An automated system that leverages **OpenAlex API** for real-time literature review and utilizes **Advanced LLMs (DeepSeek V3, GPT-OSS)** via Ollama Cloud to generate, critique, and refine **top-tier journal-quality** research proposals.
 
 ## ✨ Key Features
 
-- **📚 OpenAlex Integration**: Automatically fetches papers based on keyword (configurable limit)
-- **🔄 Iterative Refinement Loop**: Generator → Critic → Refiner cyclic structure
-- **🧠 Multi-Agent System**:
-  - **Generator**: Paper-based idea generation (Chain of Thought + Critic-Solution Framework)
-  - **Critic**: Evaluation on 4 criteria (Novelty, Feasibility, Specificity, Impact)
-  - **Refiner**: Improves ideas based on critique feedback
-- **💾 Ollama Local/Cloud**: Supports both local and cloud Ollama models
-- **📊 Rich Reports**: Auto-generates detailed Markdown + HTML reports
+- **📚 Real-time Literature Review**: Automatically fetches the latest papers from **OpenAlex** based on keywords (Strict config validation).
+- **🔄 Iterative Refinement Loop**:
+  - **Generator**: Uses **DeepSeek V3 (671B)** for high-level idea generation using Chain of Thought.
+  - **Critic**: Uses **GPT-OSS (120B)** to evaluate ideas on Novelty, Feasibility, Specificity, and Impact.
+  - **Refiner**: Uses **GPT-OSS (120B)** to improve ideas based on specific critique feedback.
+- **☁️ Hybrid Operation**: Supports both **Local Ollama** (privacy/cost) and **Ollama Cloud** (performance).
+- **📊 Rich Reports**: Auto-generates detailed **Markdown** and **HTML** reports with evolution history.
 
 ## 🏗️ System Architecture
 
 ```mermaid
 graph LR
-    A[Keyword] --> B[OpenAlex API]
-    B --> C[Top K Papers]
+    A[Keyword] -->|Fetch Limit| B[OpenAlex API]
+    B -->|Top-K Selection| C[Context]
     C --> D[Generator Agent]
     D --> E[Draft Ideas]
     E --> F[Critic Agent]
-    F --> G{Score >= threshold?}
+    F --> G{Score >= Threshold?}
     G -->|Yes| H[Accepted]
-    G -->|No, >= drop| I[Refiner Agent]
-    G -->|No, < drop| J[Rejected]
+    G -->|No, >= Drop| I[Refiner Agent]
+    G -->|No, < Drop| J[Rejected]
     I --> E
     H --> K[Markdown Report]
     K --> L[HTML Report]
@@ -42,23 +43,23 @@ graph LR
 ```text
 ├── agents/                     # Agent Modules
 │   ├── base_agent.py           # Base agent class
-│   ├── generator.py            # OpenAlex + Idea generation
-│   ├── critic.py               # Evaluation (4 criteria)
-│   └── refiner.py              # Improvement based on feedback
+│   ├── generator.py            # Idea generation (OpenAlex integrated)
+│   ├── critic.py               # Evaluation logic
+│   └── refiner.py              # Refinement logic
 ├── core/                       # Core Infrastructure
-│   ├── model_manager.py        # Ollama local/cloud management
-│   ├── mcp_client.py           # MCP server client (mock)
-│   └── types.py                # Data structures
+│   ├── model_manager.py        # Model loading & Cloud/Local management
+│   ├── mcp_client.py           # OpenAlex context fetching
+│   └── types.py                # Data types (IdeaObject, etc.)
 ├── prompts/                    # System Prompts
-│   ├── generator_v2.txt
-│   ├── critic_v2.txt
-│   └── refiner_v2.txt
+│   ├── generator.txt           # CoT + Critic-Solution Prompt
+│   ├── critic.txt              # Evaluation Rubric
+│   └── refiner.txt             # Improvement Instructions
 ├── utils/                      # Utilities
-│   ├── parser.py               # JSON parsing with fallback
-│   ├── report_generator.py     # Markdown report
-│   └── html_generator.py       # HTML conversion
-├── results/                    # Generated Reports
-├── config.yaml                 # Configuration
+│   ├── parser.py               # Robust JSON parsing
+│   ├── report_generator.py     # Markdown generation
+│   └── html_generator.py       # HTML styling
+├── results/                    # Output Directory
+├── config.yaml                 # System Configuration
 ├── main.py                     # Entry Point
 └── LICENSE                     # MIT License
 ```
@@ -68,7 +69,7 @@ graph LR
 ### Prerequisites
 
 - Python 3.12+
-- [Ollama](https://ollama.ai/)
+- [Ollama](https://ollama.ai/) (Local or Cloud endpoint)
 
 ### Installation
 
@@ -81,105 +82,69 @@ pip install pyyaml requests
 
 ### Configuration
 
-Edit `config.yaml`:
+The system is fully configurable via `config.yaml`.
+**Note:** `openalex` settings are strictly enforced.
 
 ```yaml
+project:
+  name: "Multi-agent based Research Topic Ideation System"
+  version: "1.0"
+
 ollama:
-  base_url: "http://localhost:11434"    # Local Ollama
-  cloud_url: "http://your-cloud:11434"  # Cloud Ollama (optional)
+  base_url: "http://localhost:11434"  # Local Ollama
+  cloud_url: "http://localhost:11434" # Ollama Cloud endpoint
 
 openalex:
-  fetch_limit: 200        # Number of papers to fetch from OpenAlex
-  top_k_papers: 10        # Number of most relevant papers for idea generation
+  fetch_limit: 200        # REQUIRED: Number of papers to fetch
+  top_k_papers: 10        # REQUIRED: Top papers for context
 
 agent_models:
   generator:
-    provider: "ollama"
-    model: "gpt-oss:20b"
+    provider: "ollama-cloud"
+    model: "deepseek-v3.1:671b-cloud"
     temperature: 0.8
+    system_prompt_path: "./prompts/generator.txt"
 
   critic:
     provider: "ollama-cloud"
-    model: "deepseek-v3.1:671b-cloud"
-    temperature: 0.1
+    model: "gpt-oss:120b-cloud"
+    temperature: 0.3
+    system_prompt_path: "./prompts/critic.txt"
 
   refiner:
     provider: "ollama-cloud"
     model: "gpt-oss:120b-cloud"
     temperature: 0.3
+    system_prompt_path: "./prompts/refiner.txt"
 
 loop_settings:
-  max_iterations: 2       # Maximum refinement iterations
-  num_ideas: 3            # Number of research ideas to generate
-  score_threshold: 3.0    # Minimum score to accept
-  drop_threshold: 2.0     # Below this = rejected
+  max_iterations: 2
+  num_ideas: 3
+  score_threshold: 3.0
+  drop_threshold: 2.0
 ```
 
-### Run
+### Usage
+
+Run the agent with a research keyword:
 
 ```bash
 python main.py --keyword "AI based technology intelligence"
 ```
 
-You can override iterations via CLI:
+Override iteration count:
 
 ```bash
-python main.py --keyword "patents network analysis" --loops 5
+python main.py --keyword "Generative Design in Architecture" --loops 5
 ```
 
-### Output
+## 📊 Output
 
-- `results/research_results.json`: Full data in JSON format
-- `results/research_report_YYYYMMDD_HHMMSS.md`: Markdown report
-- `results/research_report_YYYYMMDD_HHMMSS.html`: Styled HTML report
+Results are saved in the `results/` directory:
 
-## 📊 Output Example
-
-### Generated Report Structure
-
-```markdown
-## Idea 1: Quantum-Enhanced Patent Citation Embedding
-
-**Status:** `accepted`
-**Total Iterations:** 2
-
-### Evolution History
-
-#### Iteration 0 - DRAFT
-**Title:** Quantum-Enhanced Patent Citation Embedding
-**Methodology:** Use quantum circuits for similarity computation...
-
-##### 🧐 Critic Agent Evaluation
-| Criterion | Score |
-|---|---|
-| Novelty | 3/5 |
-| Feasibility | 3/5 |
-| Specificity | 2/5 |
-| Impact | 4/5 |
-| **Average** | **3.00** |
-
-#### Iteration 1 - REFINED
-**Title:** Quantum-Inspired Contrastive Graph Kernels
-
-##### 🔧 Refiner Agent Improvements
-The critic noted vague methodology. Adding specific quantum kernel formulation...
-```
-
-## ⚙️ Scoring Rubric
-
-| Score | Novelty | Feasibility | Specificity | Impact |
-|---|---|---|---|---|
-| **5** | Paradigm shift | Elegant implementation | Math formulas | Top-tier journal |
-| **4** | Cross-domain fusion | Clear roadmap | Complete pipeline | Industry applicable |
-| **3** | Domain adaptation | Theoretically possible | Standard algorithms | Field interest |
-| **2** | Parameter tuning | Cost prohibitive | Missing causality | Niche improvement |
-| **1** | Textbook knowledge | Impossible | Vague | Practice level |
-
-### Thresholds (Configurable)
-
-- **≥ score_threshold**: Accepted
-- **drop_threshold - score_threshold**: Refinement needed
-- **< drop_threshold**: Rejected
+1. **`research_results.json`**: Complete structured data including evolution history.
+2. **`research_report_DATE.md`**: Readable report with scores and feedback.
+3. **`research_report_DATE.html`**: Professional HTML report for sharing.
 
 ## 📜 License
 
@@ -187,4 +152,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-*Built with ❤️ for Research Innovation*
+*Powered by DeepSeek V3 & GPT-OSS*

@@ -36,8 +36,12 @@ class GeneratorAgent(BaseAgent):
         
         # Read OpenAlex settings from config
         openalex_config = model_manager.config.get("openalex", {})
-        self.fetch_limit = openalex_config.get("fetch_limit", 100)
-        self.top_k_papers = openalex_config.get("top_k_papers", 5)
+        
+        if "fetch_limit" not in openalex_config or "top_k_papers" not in openalex_config:
+            raise ValueError("Missing 'fetch_limit' or 'top_k_papers' in config.yaml under 'openalex' section.")
+            
+        self.fetch_limit = openalex_config["fetch_limit"]
+        self.top_k_papers = openalex_config["top_k_papers"]
     
     def fetch_papers_from_openalex(self, keyword: str, limit: int = 100) -> List[Dict[str, Any]]:
         """
@@ -137,11 +141,11 @@ class GeneratorAgent(BaseAgent):
             citations = paper.get('cited_by_count', 0)
             
             formatted.append(f"""
-**Paper {i}** [{year}] (Cited: {citations})
-- **Title:** {title}
-- **Authors:** {authors}
-- **Abstract:** {abstract}...
-""")
+                            **Paper {i}** [{year}] (Cited: {citations})
+                            - **Title:** {title}
+                            - **Authors:** {authors}
+                            - **Abstract:** {abstract}...
+                            """)
         
         return "\n".join(formatted)
     
@@ -171,26 +175,26 @@ class GeneratorAgent(BaseAgent):
         # Step 3: Generate ideas with concise prompt
         prompt = f"""You are a research PI proposing {n} novel research topics for "{keyword}".
 
-RECENT PAPERS:
-{latest_papers_str}
+                    RECENT PAPERS:
+                    {latest_papers_str}
 
-CONTEXT:
-{papers_context}
+                    CONTEXT:
+                    {papers_context}
 
-TASK:
-1. First, use <think> to identify limitations in current research and propose solutions.
-2. Then output JSON with {n} topics.
+                    TASK:
+                    1. First, use <think> to identify limitations in current research and propose solutions.
+                    2. Then output JSON with {n} topics.
 
-<think>
-CRITIC: What's missing/flawed in current research?
-SOLUTION: How to fix it with novel approaches?
-</think>
+                    <think>
+                    CRITIC: What's missing/flawed in current research?
+                    SOLUTION: How to fix it with novel approaches?
+                    </think>
 
-OUTPUT FORMAT (JSON only, no markdown):
-{EXAMPLE_JSON_STRUCTURE}
+                    OUTPUT FORMAT (JSON only, no markdown):
+                    {EXAMPLE_JSON_STRUCTURE}
 
-Generate {n} topics now:
-"""
+                    Generate {n} topics now:
+                    """
         
         print(f"[{self.role}] Generating ideas based on {len(top_papers)} relevant papers...")
         response = self.generate(prompt)

@@ -1,6 +1,6 @@
 project:
-  name: "Deep Research Agent"
-  version: "2.0"
+  name: "Multi-agent based Research Topic Ideation System"
+  version: "1.0"
 
 hardware:
   memory_limit_gb: 24
@@ -22,23 +22,28 @@ openalex:
 
 agent_models:
   generator:
-    provider: "ollama"
-    model: "gpt-oss:20b"
+    #provider: "ollama"
+    #model: "deepseek-r1:14b"
+    #temperature: 0.8
+    #system_prompt_path: "./prompts/generator.txt"
+
+    provider: "ollama-cloud"  # Ollama Cloud for better generating
+    model: "deepseek-v3.1:671b-cloud"
     temperature: 0.8
-    system_prompt_path: "./prompts/generator_v2.txt"
+    system_prompt_path: "./prompts/generator.txt"
 
   critic:
     provider: "ollama-cloud"  # Ollama Cloud for better reasoning
-    #model: "gemini-3-pro-preview:latest"
-    model: "deepseek-v3.1:671b-cloud"
-    temperature: 0.1
-    system_prompt_path: "./prompts/critic_v2.txt"
+    model: "gpt-oss:120b-cloud"
+    #model: "deepseek-v3.1:671b-cloud"
+    temperature: 0.3
+    system_prompt_path: "./prompts/critic.txt"
 
   refiner:
     provider: "ollama-cloud"
     model: "gpt-oss:120b-cloud" # Logic heavy
     temperature: 0.3
-    system_prompt_path: "./prompts/refiner_v2.txt"
+    system_prompt_path: "./prompts/refiner.txt"
 
 loop_settings:
   max_iterations: 2
