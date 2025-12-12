@@ -1,4 +1,4 @@
-# Deep Research Agent 🔬
+# Multi-Agent Research Topic Ieation Agent 🔬
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Ollama](https://img.shields.io/badge/Ollama-required-orange.svg)](https://ollama.ai/)
