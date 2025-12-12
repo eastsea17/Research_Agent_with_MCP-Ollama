@@ -1,4 +1,4 @@
-# Deep Research Agent 🔬
+# Multi-Agent based Research Topic Ideation System 🔬
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Ollama](https://img.shields.io/badge/Ollama-required-orange.svg)](https://ollama.ai/)
@@ -10,7 +10,7 @@ An automated system that searches for the latest papers via OpenAlex API and gen
 
 ## ✨ Key Features
 
-- **📚 OpenAlex Integration**: Automatically fetches 100 latest papers based on keyword
+- **📚 OpenAlex Integration**: Automatically fetches papers based on keyword (configurable limit)
 - **🔄 Iterative Refinement Loop**: Generator → Critic → Refiner cyclic structure
 - **🧠 Multi-Agent System**:
   - **Generator**: Paper-based idea generation (Chain of Thought + Critic-Solution Framework)
@@ -24,14 +24,14 @@ An automated system that searches for the latest papers via OpenAlex API and gen
 ```mermaid
 graph LR
     A[Keyword] --> B[OpenAlex API]
-    B --> C[Top 5 Papers]
+    B --> C[Top K Papers]
     C --> D[Generator Agent]
     D --> E[Draft Ideas]
     E --> F[Critic Agent]
-    F --> G{Score >= 3.0?}
+    F --> G{Score >= threshold?}
     G -->|Yes| H[Accepted]
-    G -->|No, >= 2.0| I[Refiner Agent]
-    G -->|No, < 2.0| J[Rejected]
+    G -->|No, >= drop| I[Refiner Agent]
+    G -->|No, < drop| J[Rejected]
     I --> E
     H --> K[Markdown Report]
     K --> L[HTML Report]
@@ -88,6 +88,10 @@ ollama:
   base_url: "http://localhost:11434"    # Local Ollama
   cloud_url: "http://your-cloud:11434"  # Cloud Ollama (optional)
 
+openalex:
+  fetch_limit: 200        # Number of papers to fetch from OpenAlex
+  top_k_papers: 10        # Number of most relevant papers for idea generation
+
 agent_models:
   generator:
     provider: "ollama"
@@ -105,15 +109,22 @@ agent_models:
     temperature: 0.3
 
 loop_settings:
-  max_iterations: 2
-  score_threshold: 3.0   # Minimum score to accept
-  drop_threshold: 2.0    # Below this = rejected
+  max_iterations: 2       # Maximum refinement iterations
+  num_ideas: 3            # Number of research ideas to generate
+  score_threshold: 3.0    # Minimum score to accept
+  drop_threshold: 2.0     # Below this = rejected
 ```
 
 ### Run
 
 ```bash
-python main.py --keyword "patents network analysis" --loops 3
+python main.py --keyword "AI based technology intelligence"
+```
+
+You can override iterations via CLI:
+
+```bash
+python main.py --keyword "patents network analysis" --loops 5
 ```
 
 ### Output
@@ -164,11 +175,11 @@ The critic noted vague methodology. Adding specific quantum kernel formulation..
 | **2** | Parameter tuning | Cost prohibitive | Missing causality | Niche improvement |
 | **1** | Textbook knowledge | Impossible | Vague | Practice level |
 
-### Thresholds
+### Thresholds (Configurable)
 
-- **≥ 3.0**: Accepted
-- **2.0 - 3.0**: Refinement needed
-- **< 2.0**: Rejected
+- **≥ score_threshold**: Accepted
+- **drop_threshold - score_threshold**: Refinement needed
+- **< drop_threshold**: Rejected
 
 ## 📜 License
 

@@ -33,6 +33,11 @@ class GeneratorAgent(BaseAgent):
         super().__init__(model_manager, role)
         self.openalex_url = "https://api.openalex.org/works"
         self.user_agent_email = "research-agent@example.com"
+        
+        # Read OpenAlex settings from config
+        openalex_config = model_manager.config.get("openalex", {})
+        self.fetch_limit = openalex_config.get("fetch_limit", 100)
+        self.top_k_papers = openalex_config.get("top_k_papers", 5)
     
     def fetch_papers_from_openalex(self, keyword: str, limit: int = 100) -> List[Dict[str, Any]]:
         """
@@ -43,7 +48,7 @@ class GeneratorAgent(BaseAgent):
         
         params = {
             "search": keyword,
-            "per-page": min(limit, 100),  # OpenAlex max is 200 per page
+            "per-page": min(limit, 200),  # OpenAlex max is 200 per page
             "filter": "has_abstract:true",
             "sort": "publication_year:desc"  # Get newest first
         }
@@ -100,7 +105,7 @@ class GeneratorAgent(BaseAgent):
         word_positions.sort()
         return " ".join([word for _, word in word_positions])
     
-    def _select_top_papers(self, papers: List[Dict], keyword: str, top_k: int = 5) -> List[Dict]:
+    def _select_top_papers(self, papers: List[Dict], keyword: str, top_k: int = 10) -> List[Dict]:
         """
         Select most relevant recent papers.
         Prioritizes: recency (year) and citation count.
@@ -149,15 +154,15 @@ class GeneratorAgent(BaseAgent):
         """
         
         # Step 1: Fetch papers from OpenAlex
-        papers = self.fetch_papers_from_openalex(keyword, limit=100)
+        papers = self.fetch_papers_from_openalex(keyword, limit=self.fetch_limit)
         
         # Step 2: Select top relevant papers
-        top_papers = self._select_top_papers(papers, keyword, top_k=5)
+        top_papers = self._select_top_papers(papers, keyword, top_k=self.top_k_papers)
         papers_context = self._format_papers_for_prompt(top_papers)
         
         # Build latest papers list for SOTA analysis
         latest_titles = []
-        for paper in top_papers[:5]:
+        for paper in top_papers:
             year = paper.get('year', 'N/A')
             title = paper.get('title', 'Unknown')
             latest_titles.append(f"- [{year}] {title}")

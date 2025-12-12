@@ -16,6 +16,10 @@ mcp_server:
     - "openalex_search"
     - "vector_store_query"
 
+openalex:
+  fetch_limit: 200        # Number of papers to fetch from OpenAlex
+  top_k_papers: 10         # Number of most relevant papers to use for idea generation
+
 agent_models:
   generator:
     provider: "ollama"
@@ -38,5 +42,6 @@ agent_models:
 
 loop_settings:
   max_iterations: 2
+  num_ideas: 3            # Number of research ideas to generate
   score_threshold: 3.0
   drop_threshold: 2.0

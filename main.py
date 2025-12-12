@@ -32,7 +32,14 @@ def research_loop(keyword: str, max_loops: int = 3, output_file: str = "ideas.js
     loop_settings = model_mgr.config.get("loop_settings", {})
     score_threshold = loop_settings.get("score_threshold", 3.0)
     drop_threshold = loop_settings.get("drop_threshold", 2.0)
-    print(f"Thresholds: Accept >= {score_threshold}, Drop < {drop_threshold}")
+    num_ideas = loop_settings.get("num_ideas", 3)
+    config_max_iterations = loop_settings.get("max_iterations", 3)
+    
+    # Use config value if CLI default wasn't overridden
+    if max_loops == 3:  # CLI default
+        max_loops = config_max_iterations
+    
+    print(f"Settings: Accept >= {score_threshold}, Drop < {drop_threshold}, Ideas: {num_ideas}, Max Iterations: {max_loops}")
     
     # 2. Context
     print("Fetching Context...")
@@ -42,7 +49,7 @@ def research_loop(keyword: str, max_loops: int = 3, output_file: str = "ideas.js
     print("Initialization Generator...")
     model_mgr.load_model("generator")
     generator = GeneratorAgent(model_mgr, "generator")
-    ideas = generator.create_drafts(keyword, context, n=3)
+    ideas = generator.create_drafts(keyword, context, n=num_ideas)
     model_mgr.unload_model("generator")
     
     # Loop
