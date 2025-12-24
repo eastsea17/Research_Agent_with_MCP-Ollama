@@ -24,25 +24,56 @@ An automated system that leverages **OpenAlex API** for real-time literature rev
 
 ## 🏗️ System Architecture
 
+## System Architecture
+
 ```mermaid
-graph LR
-    A[Natural Language Query] --> B[Query Optimizer]
-    B --> C[3+ Keywords]
-    C --> D[OpenAlex Search]
-    D --> E{Papers >= 10?}
-    E -->|Yes| G[Top-K Selection]
-    E -->|No| F[LLM Selects Best 2 Keywords]
-    F --> H[Secondary Search]
-    H --> I[Merge & Deduplicate]
-    I --> G
-    G --> J[Generator Agent]
-    J --> K[Critic Agent]
-    K --> L{Score >= 3.0?}
-    L -->|Yes| M[Accepted]
-    L -->|2.0 - 3.0| N[Refiner Agent]
-    L -->|< 2.0| O[Rejected]
-    N --> K
-    M --> P[Reports]
+graph TD
+    %% Define Styles
+    classDef user fill:#f9f9f9,stroke:#333,stroke-width:2px,color:black;
+    classDef agent fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:black;
+    classDef tool fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,stroke-dasharray: 5 5,color:black;
+    classDef output fill:#dcedc8,stroke:#558b2f,stroke-width:2px,color:black;
+
+    %% Nodes
+    User(["👤 User Input<br/>(Research Topic)"]):::user
+    
+    subgraph System [Multi-Agent System]
+        direction TB
+        
+        %% Generator Phase
+        subgraph P1 [Phase 1: Generation]
+            Generator("Generator Agent<br/>(Plan -> Search -> Draft)"):::agent
+            SearchTool("Search Tool<br/>(Tavily/MCP)"):::tool
+            LLM1{"Local LLM<br/>(Ollama)"}:::tool
+        end
+        
+        %% Critic Phase
+        subgraph P2 [Phase 2: Critique]
+            Critic("Critic Agent<br/>(Review & Feedback)"):::agent
+            LLM2{"Local LLM<br/>(Ollama)"}:::tool
+        end
+        
+        %% Refiner Phase
+        subgraph P3 [Phase 3: Refinement]
+            Refiner("Refiner Agent<br/>(Rewrite & Polish)"):::agent
+            LLM3{"Local LLM<br/>(Ollama)"}:::tool
+        end
+    end
+    
+    Report["📄 Final Report<br/>(HTML/Markdown)"]:::output
+
+    %% Connections
+    User --> Generator
+    
+    Generator <--> SearchTool
+    Generator <--> LLM1
+    Generator -- "Initial Draft" --> Critic
+    
+    Critic <--> LLM2
+    Critic -- "Critique Feedback" --> Refiner
+    
+    Refiner <--> LLM3
+    Refiner --> Report
 ```
 
 ## 📁 Project Structure
